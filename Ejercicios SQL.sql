@@ -98,6 +98,21 @@ where prod_detalle like 'A%'
 --Mostrar para todos los rubros de artículos: código, detalle, cantidad de artículos de ese
 --rubro y stock total de ese rubro de artículos. Solo tener en cuenta aquellos artículos que
 --tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.
+SELECT 
+	rubr_id AS 'Codigo', 
+	rubr_detalle AS 'Rubro', 
+	COUNT(DISTINCT prod_codigo) AS 'Articulos',
+	SUM(stoc_cantidad) AS 'Stock total'
+FROM Rubro
+JOIN Producto ON rubr_id = prod_rubro
+JOIN STOCK ON prod_codigo = stoc_producto
+WHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
+(SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')
+GROUP BY rubr_id, rubr_detalle
+
+
+
+
 
 select rubr_id, rubr_detalle, count(DISTINCT prod_codigo)
 from Rubro
@@ -173,3 +188,39 @@ JOIN Factura on clie_codigo = fact_cliente
 where YEAR(fact_fecha) <> 2012
 GROUP BY clie_codigo, fact_fecha
 ORDER BY fact_fecha
+
+
+--Generar una consulta que muestre para cada artículo código, detalle, mayor precio
+--menor precio y % de la diferencia de precios (respecto del menor Ej.: menor precio =
+--10, mayor precio =12 => mostrar 20 %). Mostrar solo aquellos artículos que posean
+--stock.
+
+select prod_codigo, prod_detalle, max(item_precio) PrecioMaximo , min(item_precio) PrecioMinimo
+from Producto
+JOIN Item_Factura on item_producto = prod_codigo
+JOIN STOCK on prod_codigo = stoc_producto
+WHERE stoc_cantidad > 0
+GROUP BY prod_codigo, prod_detalle
+HAVING SUM(stoc_cantidad) > 0
+
+
+select * from STOCK
+ORDER BY stoc_cantidad
+select * from Item_Factura
+ORder by item_producto
+select * from Producto
+ORDER BY prod_codigo
+
+--Mostrar para el o los artículos que tengan stock en todos los depósitos, nombre del
+--artículo, stock del depósito que más stock tiene.select prod_detalle AS 'Articulos',FROM Producto JOIN STOCK on prod_codigo = stoc_productoGROUP BY prod_detalleHAVING SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_cantidad > 0 and stoc_deposito <> 0--Solo tener en cuenta aquellos artículos que
+--tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.SELECT * from STOCK
+	rubr_id AS 'Codigo', 
+	rubr_detalle AS 'Rubro', 
+	COUNT(DISTINCT prod_codigo) AS 'Articulos',
+	SUM(stoc_cantidad) AS 'Stock total'
+FROM Rubro
+JOIN Producto ON rubr_id = prod_rubro
+JOIN STOCK ON prod_codigo = stoc_producto
+WHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
+(SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')
+GROUP BY rubr_id, rubr_detalle
