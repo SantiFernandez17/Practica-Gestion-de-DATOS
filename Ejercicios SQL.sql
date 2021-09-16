@@ -212,8 +212,23 @@ select * from Producto
 ORDER BY prod_codigo
 
 --Mostrar para el o los artículos que tengan stock en todos los depósitos, nombre del
---artículo, stock del depósito que más stock tiene.select prod_detalle AS 'Articulos',FROM Producto JOIN STOCK on prod_codigo = stoc_productoGROUP BY prod_detalleHAVING SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_cantidad > 0 and stoc_deposito <> 0--Solo tener en cuenta aquellos artículos que
---tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.SELECT * from STOCK
+--artículo, stock del depósito que más stock tiene.
+
+select (select top 1 sum(stoc_cantidad) stock, stoc_deposito from STOCK GROUP BY stoc_deposito ORDER BY stock desc), prod_detalle AS 'Articulos', max(stoc_cantidad)                                         
+FROM Producto JOIN STOCK on stoc_producto = prod_codigo
+GROUP BY prod_detalle, stoc_deposito
+
+
+
+
+
+-- COUNT CUENTA TODAS LAS FILAS
+
+
+--Solo tener en cuenta aquellos artículos que
+--tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.
+
+SELECT 
 	rubr_id AS 'Codigo', 
 	rubr_detalle AS 'Rubro', 
 	COUNT(DISTINCT prod_codigo) AS 'Articulos',
@@ -223,4 +238,23 @@ JOIN Producto ON rubr_id = prod_rubro
 JOIN STOCK ON prod_codigo = stoc_producto
 WHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
 (SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')
-GROUP BY rubr_id, rubr_detalle
+GROUP BY rubr_id, rubr_detalle
+
+--Mostrar el código del jefe, código del empleado que lo tiene como jefe, nombre del
+--mismo y la cantidad de depósitos que ambos tienen asignados.
+
+select empl_tareas, empl_codigo from Empleado
+where empl_tareas like 'Jefe %' 
+
+
+select prod_codigo from Producto
+where prod_codigo = '0000000'
+
+
+
+--Mostrar para todos los rubros de artículos código, detalle, cantidad de artículos de ese
+--rubro y stock total de ese rubro de artículos. Solo tener en cuenta aquellos artículos que
+--tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.select rubr_id, rubr_detalle, prod_codigo, sum(stoc_cantidad) AS 'cantidad_de_articulos' from RubroJOIN Producto on prod_rubro = rubr_idJOIN STOCK on stoc_producto = prod_codigoWHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
+(SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')GROUP BY rubr_id, rubr_detalle, prod_codigo--Mostrar los 10 productos más vendidos en la historia y también los 10 productos menos
+--vendidos en la historia. Además mostrar de esos productos, quien fue el cliente que
+--mayor compra realizo.
