@@ -165,19 +165,6 @@ HAVING SUM(stoc_cantidad) > 0
 select * from Item_Factura
 select * from Producto
 
---Realizar una consulta que visualice los campos NOMBRE ARTÍCULO,
---SECCIÓN, PRECIO de la tabla PRODUCTOS y un campo nuevo que
---nombramos con el texto “DESCUENTO_7”. Debe mostrar el resultado de aplicar
---sobre el campo PRECIO un descuento de un 7 %. El formato del nuevo campo
---para debe aparecer con 2 lugares decimales.
-
-select prod_detalle AS 'Articulo', prod_codigo as 'Code', item_precio AS 'Precio'
-from Producto join Item_Factura on prod_codigo = item_producto
-where 'Precio' * 0,7
-
--- como HAGO SI QUIERO MODIFICAR UNA COLUMNA.
-
-
 select * from Familia
 
 --todas las compras en el año 2012
@@ -243,18 +230,68 @@ GROUP BY rubr_id, rubr_detalle
 --Mostrar el código del jefe, código del empleado que lo tiene como jefe, nombre del
 --mismo y la cantidad de depósitos que ambos tienen asignados.
 
-select empl_tareas, empl_codigo from Empleado
-where empl_tareas like 'Jefe %' 
-
-
-select prod_codigo from Producto
-where prod_codigo = '0000000'
-
+select empl_jefe, empl_codigo, empl_apellido, empl_nombre, count(depo_encargado)
+from Empleado
+LEFT JOIN DEPOSITO on empl_codigo = depo_encargado or empl_jefe = depo_encargado
+GROUP BY empl_jefe, empl_codigo, empl_apellido, empl_nombre	
 
 
 --Mostrar para todos los rubros de artículos código, detalle, cantidad de artículos de ese
 --rubro y stock total de ese rubro de artículos. Solo tener en cuenta aquellos artículos que
---tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.select rubr_id, rubr_detalle, prod_codigo, sum(stoc_cantidad) AS 'cantidad_de_articulos' from RubroJOIN Producto on prod_rubro = rubr_idJOIN STOCK on stoc_producto = prod_codigoWHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
-(SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')GROUP BY rubr_id, rubr_detalle, prod_codigo--Mostrar los 10 productos más vendidos en la historia y también los 10 productos menos
---vendidos en la historia. Además mostrar de esos productos, quien fue el cliente que
---mayor compra realizo.
+--tengan un stock mayor al del artículo ‘00000000’ en el depósito ‘00’.
+
+
+select rubr_id, rubr_detalle, prod_codigo, sum(stoc_cantidad) AS 'cantidad_de_articulos' from Rubro
+JOIN Producto on prod_rubro = rubr_id
+JOIN STOCK on stoc_producto = prod_codigo
+WHERE (SELECT SUM(stoc_cantidad) FROM STOCK WHERE stoc_producto = prod_codigo) >
+(SELECT stoc_cantidad FROM STOCK WHERE stoc_producto = '00000000' AND stoc_deposito = '00')
+GROUP BY rubr_id, rubr_detalle, prod_codigo
+
+
+
+
+select prod_detalle, max(stoc_cantidad)
+from Producto JOIN STOCK on stoc_producto = prod_codigo
+GROUP BY prod_detalle
+having count(*) = (select count(*) from DEPOSITO)
+--como sé que estan todos los depositos? porque la cnatidad de depositos tiene que ser igual a la cantidad de depositos que hay
+
+--select prod_detalle, 
+--from Producto JOIN STOCK on stoc_producto = prod_codigo esto me trae todos los depositos donde hay stock
+
+--Mostrar el código del jefe, código del empleado que lo tiene como jefe, nombre del
+--mismo y la cantidad de depósitos que ambos tienen asignados.
+
+SELECT 
+	empl_jefe AS 'Codigo jefe', 
+	empl_codigo AS 'Codigo empleado', 
+	empl_nombre+' '+empl_apellido AS 'Empleado',
+	(SELECT COUNT(*) FROM DEPOSITO WHERE depo_encargado = empl_jefe) AS 'Depositos jefe', 
+	(SELECT COUNT(*) FROM DEPOSITO WHERE depo_encargado = empl_codigo) AS 'Depositos empleado'
+FROM Empleado
+
+--Realizar una consulta que retorne el detalle de la familia, la cantidad diferentes de
+--productos vendidos y el monto de dichas ventas sin impuestos. Los datos se deberán
+--ordenar de mayor a menor, por la familia que más productos diferentes vendidos tenga,
+--solo se deberán mostrar las familias que tengan una venta superior a 20.000 pesos para
+--el año 2012
+
+SELECT 
+	fami_detalle AS 'Familia', 
+	COUNT(DISTINCT prod_codigo) AS 'Productos vendidos',
+	SUM(item_precio * item_cantidad) AS 'Monto ventas'
+FROM Familia
+JOIN Producto ON fami_id = prod_familia
+JOIN Item_Factura ON prod_codigo = item_producto
+GROUP BY fami_id, fami_detalle
+HAVING (SELECT SUM(item_cantidad * item_precio)
+FROM Producto
+JOIN Item_Factura ON prod_codigo = item_producto
+JOIN Factura ON item_numero + item_tipo + item_sucursal = 
+fact_numero + fact_tipo + fact_sucursal
+WHERE YEAR(fact_fecha) = 2012 
+AND prod_familia = fami_id) > 20000
+ORDER BY 2 DESC
+
+
